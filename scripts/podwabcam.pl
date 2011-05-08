@@ -4,12 +4,13 @@ package WABCAM::Constants;
 
 use strict;
 
-use vars qw/$PLAYLIST $TMPDIR $STOREDIR $ROOTURL $EPISODELENGTH $MAXEP/;
+use vars qw/$PLAYLIST $TMPDIR $STOREDIR $ROOTURL $EPISODELENGTH $MAXEP $IMGURL/;
 
 $PLAYLIST = 'http://provisioning.streamtheworld.com/pls/WABCAM.pls';
 $TMPDIR = '/tmp/wabcam';
 $STOREDIR = '/var/www/wabcam';
 $ROOTURL = 'http://tefd.co.uk/wabcam';
+$IMGURL = 'http://www.foxnewsradio.com/wp-content/uploads/2009/03/hannity.jpg';
 $EPISODELENGTH = 3*60*60;
 $MAXEP = 20;
 
@@ -19,6 +20,7 @@ package WABCAM::Worker;
 
 use strict;
 
+use File::MimeInfo;
 use File::Path qw/mkpath/;
 use File::stat;
 use POSIX qw/strftime/;
@@ -53,7 +55,7 @@ sub Encode($) {
 	
 	my $filename = $WABCAM::Constants::STOREDIR . '/' . strftime("%Y-%m-%d", localtime) . ".mp3";
 	
-	my $cmd = "ffmpeg -y -i $tmp/* -ab 48k -ar 44100 -ac 2 -vn $filename";
+	my $cmd = "ffmpeg -y -i $tmp/* -ab 50k -ar 44100 -ac 2 -vn $filename";
 	
 	system($cmd);
 }
@@ -65,13 +67,14 @@ sub UpdatePodcast() {
 		title => 'Sean Hannity',
 		link => $WABCAM::Constants::ROOTURL,
 		description => 'The Sean Hannity Show on WABCAM',
-		pubDate => strftime("%c", localtime)
+		pubDate  => strftime('%a, %d %b %Y %T %z', gmtime(time)),
+		lastBuildDate  => strftime('%a, %d %b %Y %T %z', gmtime(time)),
 	);
 	
 	$rss->image(
 		title => 'Sean Hannity',
 		description => 'Sean Hannity',
-		url => $WABCAM::Constants::ROOTURL . '/hannity.jpg',
+		url => $WABCAM::Constants::IMGURL,
 		link => $WABCAM::Constants::ROOTURL,
 	);
 	
@@ -85,17 +88,18 @@ sub UpdatePodcast() {
 		if ($count <= $WABCAM::Constants::MAXEP) {
 			my $stat = stat($filepath);
 			
-			my $date = $stat->mtime;
+			my @date = gmtime($stat->mtime);
 			
 			$rss->add_item(
-				title => "Sean Hannity - " . strftime("%Y-%m-%d", localtime($date)),
-				description => "The Sean Hannity show for " . strftime("%A %B %e %Y", localtime($date)),
-				pubDate => strftime("%c", localtime($date)),
+				title => "Sean Hannity - " . strftime('%a, %d %b %Y', @date),
+				description => "The Sean Hannity show for " . strftime('%a, %d %b %Y %T %z', @date),
+				pubDate => strftime('%a, %d %b %Y %T %z', @date),
 				enclosure => {
 					url => $WABCAM::Constants::ROOTURL . '/' . $file,
 					length => -s $filepath,
-					type => 'audio/mpeg'
-				}
+					type => mimetype($filepath)
+				},
+				permaLink => $WABCAM::Constants::ROOTURL . '/' . $file
 			);	
 		}
 		else {
@@ -106,7 +110,7 @@ sub UpdatePodcast() {
 	
 	closedir DIR;
 	
-	print $rss->save($WABCAM::Constants::STOREDIR . '/podcast.rss');
+	$rss->save($WABCAM::Constants::STOREDIR . '/podcast.rss');
 }
 
 1;
