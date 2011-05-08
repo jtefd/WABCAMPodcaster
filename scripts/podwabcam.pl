@@ -92,7 +92,7 @@ sub UpdatePodcast() {
 			
 			$rss->add_item(
 				title => "Sean Hannity - " . strftime('%a, %d %b %Y', @date),
-				description => "The Sean Hannity show for " . strftime('%a, %d %b %Y %T %z', @date),
+				description => "The Sean Hannity show for " . strftime('%a, %d %b %Y', @date),
 				pubDate => strftime('%a, %d %b %Y %T %z', @date),
 				enclosure => {
 					url => $WABCAM::Constants::ROOTURL . '/' . $file,
