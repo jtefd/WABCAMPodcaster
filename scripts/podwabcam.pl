@@ -1,10 +1,26 @@
+#!/usr/bin/env perl
+
+package WABCAM::Constants;
+
+use strict;
+
+use vars qw/$PLAYLIST $TMPDIR $STOREDIR $ROOTURL $EPISODELENGTH $MAXEP/;
+
+$PLAYLIST = 'http://provisioning.streamtheworld.com/pls/WABCAM.pls';
+$TMPDIR = '/tmp/wabcam';
+$STOREDIR = '/var/www/wabcam';
+$ROOTURL = 'http://tefd.co.uk/wabcam';
+$EPISODELENGTH = 3*60*60;
+$MAXEP = 20;
+
+1;
+
 package WABCAM::Worker;
 
 use strict;
 
 use File::Path qw/mkpath/;
 use File::stat;
-use WABCAM::Constants;
 use POSIX qw/strftime/;
 use XML::RSS;
 
@@ -94,3 +110,40 @@ sub UpdatePodcast() {
 }
 
 1;
+
+use strict;
+
+use File::Path qw/rmtree/;
+
+use vars qw/$VERSION/;
+
+$VERSION = '0.0.1';
+
+my $pid = fork;
+
+if($pid) {
+	eval {
+		local $SIG{ALRM} = sub { die 'TIMEOUT' };
+		
+		alarm($WABCAM::Constants::EPISODELENGTH);
+		
+		waitpid($pid, 0);
+		
+		alarm(0);	
+	} or do {
+		if ($@ =~ /TIMEOUT/) {
+			kill 'INT' => $pid;
+		}
+	};
+	
+	my $tmpdir = $WABCAM::Constants::TMPDIR . '/' . $pid;
+	
+	WABCAM::Worker::Encode($tmpdir);
+	
+	WABCAM::Worker::UpdatePodcast();
+	
+	rmtree($tmpdir);
+}
+else {
+	WABCAM::Worker::Rip($WABCAM::Constants::PLAYLIST);
+}
