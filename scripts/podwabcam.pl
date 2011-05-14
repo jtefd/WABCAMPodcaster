@@ -8,7 +8,7 @@ use vars qw/$PLAYLIST $TMPDIR $STOREDIR $ROOTURL $EPISODELENGTH $MAXEP $IMGURL/;
 
 $PLAYLIST = 'http://provisioning.streamtheworld.com/pls/WABCAM.pls';
 $TMPDIR = '/tmp/wabcam';
-$STOREDIR = '/var/www/wabcam';
+$STOREDIR = '/var/www/podcasts/wabcam';
 $ROOTURL = 'http://tefd.co.uk/podcasts/wabcam';
 $IMGURL = 'http://www.foxnewsradio.com/wp-content/uploads/2009/03/hannity.jpg';
 $EPISODELENGTH = 3*60*60;
